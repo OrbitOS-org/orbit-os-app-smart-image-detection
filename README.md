@@ -12,6 +12,12 @@ It is also a practical, readable example of **Edge AI on Orbit OS**: how an app 
 
 Runs on Raspberry Pi, Arduino UNO Q and other ARM64 devices with Orbit OS (free Community Edition).
 
+## Demo
+
+[![Edge AI Object Detection YOLO v8, Raspberry Pi 5 vs Arduino UNO Q — No Cloud, No Docker](https://img.youtube.com/vi/aiFJmosYVAI/maxresdefault.jpg)](https://youtu.be/aiFJmosYVAI)
+
+*Object detection with this app on a Raspberry Pi 5 and an Arduino UNO Q, side by side — no cloud, no Docker.*
+
 ## Features
 
 - **Detect objects in your images** — upload a JPEG or PNG, get bounding boxes, labels and scores (80 COCO classes)
