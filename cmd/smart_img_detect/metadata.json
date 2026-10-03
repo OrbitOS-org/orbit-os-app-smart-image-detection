@@ -1,0 +1,12 @@
+{
+  "name": "Edge AI – Smart Image Detection",
+  "version": "1.0.5",
+  "description": "Detect objects in images using AI inference",
+  "entry_point": "smart_img_detect",
+  "permissions": [
+    "SystemService/*",
+    "AiService/*",
+    "AppHubService/*"
+  ],
+  "package_id": "org.orbit-os.tools.smart_img_detect"
+}

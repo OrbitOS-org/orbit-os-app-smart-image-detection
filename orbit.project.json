@@ -1,0 +1,8 @@
+{
+  "language": "go",
+  "name": "orbit-os-app-smart-image-detection",
+  "appPath": "cmd/smart_img_detect",
+  "certsDir": "cmd/certs/grpc",
+  "sdkVersion": "v26.0.3",
+  "sdkDevPackageNaming": false
+}

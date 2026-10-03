@@ -1,0 +1,17 @@
+# TLS certificates and keys — never commit
+**/certs/grpc/*.crt
+**/certs/grpc/*.key
+# local copy of the model for running off-device (the tracked one is in orb/data/models/)
+cmd/smart_img_detect/models/
+# build output
+packages/
+*.orb
+/smart_img_detect
+# local SDK copy and Go workspace created by Orbit Studio
+# (the repo builds against the published module github.com/OrbitOS-org/orbit-os-sdk-go/v26)
+orbit-os-sdk-go/
+go.work
+go.work.sum
+# local Orbit Studio settings
+orbit.project.local.json
+.DS_Store

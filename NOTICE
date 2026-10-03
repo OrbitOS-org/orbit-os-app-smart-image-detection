@@ -1,0 +1,29 @@
+Orbit OS Edge AI - Smart Image Detection
+Copyright (C) 2026 Orbit OS
+
+This program is free software: you can redistribute it and/or modify it
+under the terms of the GNU Affero General Public License as published by
+the Free Software Foundation, version 3. It is distributed WITHOUT ANY
+WARRANTY. See the LICENSE file for the full text.
+
+Developed by Orbit OS for the Orbit OS platform (https://www.orbit-os.org/).
+
+Third-party components
+----------------------
+
+YOLOv8n object detection model
+  cmd/smart_img_detect/orb/data/models/yolov8_spotlab.tflite
+  "Ultralytics YOLOv8n model trained on coco.yaml" (Ultralytics 8.0.192),
+  exported to TensorFlow Lite.
+  Copyright (C) Ultralytics - https://github.com/ultralytics/ultralytics
+  License: AGPL-3.0 - https://ultralytics.com/license
+
+Orbit OS Go SDK - https://github.com/OrbitOS-org/orbit-os-sdk-go
+  License: Apache-2.0
+
+Go modules golang.org/x/image, golang.org/x/net, golang.org/x/sys,
+golang.org/x/text, google.golang.org/protobuf
+  License: BSD-3-Clause
+
+google.golang.org/grpc, google.golang.org/genproto
+  License: Apache-2.0

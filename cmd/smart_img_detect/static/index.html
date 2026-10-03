@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Edge AI – Smart Image Detection — Orbit OS</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml" sizes="any" />
+  <link rel="alternate icon" href="/favicon.ico" />
+  <link rel="stylesheet" href="/app.css" />
+</head>
+<body>
+  <div class="wrap">
+    <header class="page-header">
+      <img class="brand-logo" src="/orbit-logo.png" width="200" height="48" alt="Orbit OS" />
+      <div class="page-header-text">
+        <h1>Edge AI – Smart Image Detection</h1>
+      </div>
+    </header>
+    <div class="card">
+      <div class="drop" id="drop" tabindex="0">
+        <p>Drop an image here or <strong>browse</strong></p>
+        <p class="drop-hint">JPEG, PNG</p>
+        <input type="file" id="file" accept="image/jpeg,image/png,image/jpg" />
+      </div>
+      <div class="preview-wrap" id="previewWrap">
+        <img class="preview" id="preview" alt="preview" />
+        <canvas id="overlay" class="overlay" aria-hidden="true"></canvas>
+      </div>
+      <div class="row">
+        <button type="button" id="run" disabled>Detect Objects</button>
+        <span class="meta" id="fname"></span>
+      </div>
+      <div class="out" id="out" hidden>
+        <h2>Results</h2>
+        <p class="ok" id="timing"></p>
+        <ul class="det" id="list"></ul>
+        <div class="json-block" id="jsonBlock">
+          <button type="button" class="btn-ghost" id="toggleRaw">Show JSON</button>
+          <pre id="raw"></pre>
+        </div>
+      </div>
+      <p class="err" id="err" hidden></p>
+    </div>
+  </div>
+  <script>
+    const drop = document.getElementById('drop');
+    const fileInput = document.getElementById('file');
+    const previewWrap = document.getElementById('previewWrap');
+    const preview = document.getElementById('preview');
+    const overlay = document.getElementById('overlay');
+    const run = document.getElementById('run');
+    const fname = document.getElementById('fname');
+    const out = document.getElementById('out');
+    const timing = document.getElementById('timing');
+    const list = document.getElementById('list');
+    const raw = document.getElementById('raw');
+    const jsonBlock = document.getElementById('jsonBlock');
+    const toggleRaw = document.getElementById('toggleRaw');
+    const err = document.getElementById('err');
+
+    let currentFile = null;
+    let lastDetections = [];
+    let lastJSON = '';
+
+    const boxColors = ['#7b5ce6', '#22c55e', '#3b82f6', '#eab308', '#ef4444', '#a855f7', '#06b6d4', '#f97316'];
+
+    function clearOverlay() {
+      const ctx = overlay.getContext('2d');
+      const w = overlay.width;
+      const h = overlay.height;
+      ctx.clearRect(0, 0, w, h);
+    }
+
+    function syncCanvasToImage() {
+      const w = preview.clientWidth;
+      const h = preview.clientHeight;
+      if (!w || !h) return;
+      const dpr = window.devicePixelRatio || 1;
+      overlay.width = Math.round(w * dpr);
+      overlay.height = Math.round(h * dpr);
+      overlay.style.width = w + 'px';
+      overlay.style.height = h + 'px';
+      const ctx = overlay.getContext('2d');
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    }
+
+    function drawBoxes(detections) {
+      syncCanvasToImage();
+      const w = preview.clientWidth;
+      const h = preview.clientHeight;
+      if (!w || !h) return;
+      const ctx = overlay.getContext('2d');
+      ctx.clearRect(0, 0, w, h);
+      (detections || []).forEach((d, i) => {
+        const b = d.box;
+        if (!b || b.length < 4) return;
+        const [x1, y1, x2, y2] = b.map(Number);
+        const px1 = x1 * w;
+        const py1 = y1 * h;
+        const pw = (x2 - x1) * w;
+        const ph = (y2 - y1) * h;
+        const col = boxColors[i % boxColors.length];
+        ctx.strokeStyle = col;
+        ctx.lineWidth = 2;
+        ctx.strokeRect(px1, py1, pw, ph);
+        const idx = i + 1;
+        const cls = d.class || '?';
+        const line1 = idx + '. ' + cls;
+        const line2 = d.score != null ? d.score.toFixed(3) : '—';
+        ctx.font = '700 15px ui-sans-serif, system-ui, sans-serif';
+        const w1 = ctx.measureText(line1).width;
+        ctx.font = '400 10px ui-sans-serif, system-ui, sans-serif';
+        const w2 = ctx.measureText(line2).width;
+        const pad = 6;
+        const lineH1 = 16;
+        const lineH2 = 11;
+        const gap = 1;
+        const boxW = Math.max(w1, w2) + pad * 2;
+        const boxH = pad + lineH1 + gap + lineH2 + 6;
+        let ly = py1 - boxH;
+        if (ly < 0) ly = py1 + 2;
+        ctx.fillStyle = col;
+        ctx.fillRect(px1, ly, boxW, boxH);
+        ctx.fillStyle = '#fff';
+        ctx.font = '700 15px ui-sans-serif, system-ui, sans-serif';
+        ctx.fillText(line1, px1 + pad, ly + pad + lineH1 - 3);
+        ctx.fillStyle = 'rgba(255,255,255,0.78)';
+        ctx.font = '400 10px ui-sans-serif, system-ui, sans-serif';
+        ctx.fillText(line2, px1 + pad, ly + pad + lineH1 + gap + lineH2 - 1);
+      });
+    }
+
+    preview.addEventListener('load', () => {
+      syncCanvasToImage();
+      drawBoxes(lastDetections);
+    });
+
+    window.addEventListener('resize', () => {
+      if (previewWrap.classList.contains('show')) {
+        syncCanvasToImage();
+        drawBoxes(lastDetections);
+      }
+    });
+
+    drop.addEventListener('click', () => fileInput.click());
+    drop.addEventListener('keydown', (e) => { if (e.key === 'Enter') fileInput.click(); });
+    ['dragenter','dragover'].forEach(ev => drop.addEventListener(ev, (e) => { e.preventDefault(); drop.classList.add('drag'); }));
+    ['dragleave','drop'].forEach(ev => drop.addEventListener(ev, (e) => { e.preventDefault(); drop.classList.remove('drag'); }));
+    drop.addEventListener('drop', (e) => {
+      const f = e.dataTransfer.files[0];
+      if (f && f.type.startsWith('image/')) setFile(f);
+    });
+    fileInput.addEventListener('change', () => {
+      const f = fileInput.files[0];
+      if (f) setFile(f);
+    });
+
+    function setFile(f) {
+      currentFile = f;
+      fname.textContent = f.name;
+      run.disabled = false;
+      err.hidden = true;
+      out.hidden = true;
+      lastDetections = [];
+      lastJSON = '';
+      jsonBlock.classList.remove('open');
+      toggleRaw.textContent = 'Show JSON';
+      raw.textContent = '';
+      preview.src = URL.createObjectURL(f);
+      previewWrap.classList.add('show');
+    }
+
+    toggleRaw.addEventListener('click', () => {
+      const open = jsonBlock.classList.toggle('open');
+      toggleRaw.textContent = open ? 'Hide JSON' : 'Show JSON';
+    });
+
+    run.addEventListener('click', async () => {
+      if (!currentFile) return;
+      err.hidden = true;
+      out.hidden = true;
+      run.disabled = true;
+      lastDetections = [];
+      drawBoxes([]);
+      const fd = new FormData();
+      fd.append('image', currentFile, currentFile.name);
+      try {
+        const res = await fetch('/api/infer', { method: 'POST', body: fd });
+        const j = await res.json();
+        if (!res.ok || !j.ok) {
+          throw new Error(j.error || res.statusText || 'Request failed');
+        }
+        timing.textContent = 'RTT ' + (j.rtt_ms != null ? j.rtt_ms.toFixed(1) + ' ms' : '—') +
+          ' · device ' + (j.latency_us != null ? (j.latency_us / 1000).toFixed(2) + ' ms' : '—');
+        list.innerHTML = '';
+        (j.detections || []).forEach((d, i) => {
+          const li = document.createElement('li');
+          li.className = 'det-row';
+          const num = document.createElement('span');
+          num.className = 'det-num';
+          num.textContent = (i + 1) + '.';
+          const body = document.createElement('div');
+          body.className = 'det-body';
+          const cls = document.createElement('div');
+          cls.className = 'det-class';
+          cls.textContent = d.class || '—';
+          const sub = document.createElement('div');
+          sub.className = 'det-sub';
+          sub.textContent = 'score ' + (d.score != null ? d.score.toFixed(3) : '—') +
+            '  ·  box ' + (d.box || []).map((x) => Number(x).toFixed(3)).join(', ');
+          body.appendChild(cls);
+          body.appendChild(sub);
+          li.appendChild(num);
+          li.appendChild(body);
+          list.appendChild(li);
+        });
+        if (!j.detections || j.detections.length === 0) {
+          const li = document.createElement('li');
+          li.className = 'det-row';
+          li.style.borderBottom = 'none';
+          li.textContent = 'No detections above threshold.';
+          list.appendChild(li);
+        }
+        lastJSON = JSON.stringify(j, null, 2);
+        raw.textContent = lastJSON;
+        jsonBlock.classList.remove('open');
+        toggleRaw.textContent = 'Show JSON';
+        lastDetections = j.detections || [];
+        drawBoxes(lastDetections);
+        out.hidden = false;
+      } catch (e) {
+        err.textContent = e.message || String(e);
+        err.hidden = false;
+      } finally {
+        run.disabled = false;
+      }
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#7c3aed"/>
+      <stop offset="50%" stop-color="#2563eb"/>
+      <stop offset="100%" stop-color="#06b6d4"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="64" height="64" rx="16" fill="url(#bg)"/>
+
+  <!-- Camera frame -->
+  <g stroke="#ffffff" stroke-width="2" fill="none" opacity="0.75">
+    <path d="M14 24 V14 H24"/>
+    <path d="M40 14 H50 V24"/>
+    <path d="M50 40 V50 H40"/>
+    <path d="M24 50 H14 V40"/>
+  </g>
+
+  <!-- Detection box -->
+  <rect x="20" y="20" width="24" height="24" rx="6"
+        fill="none" stroke="#ffffff" stroke-width="2.4"/>
+
+  <!-- Google-style detection points -->
+  <circle cx="26" cy="26" r="2.3" fill="#4285F4"/>
+  <circle cx="38" cy="27" r="2.3" fill="#EA4335"/>
+  <circle cx="30" cy="38" r="2.3" fill="#FBBC05"/>
+  <circle cx="36" cy="40" r="2.3" fill="#34A853"/>
+
+  <!-- AI badge (chip / neural indicator) -->
+  <g>
+    <rect x="7" y="7" width="14" height="14" rx="4"
+          fill="#ffffff" opacity="0.95"/>
+
+    <!-- neural dot inside -->
+    <circle cx="14" cy="14" r="3.2" fill="#2563eb"/>
+    <circle cx="14" cy="14" r="1.2" fill="#ffffff"/>
+  </g>
+</svg>
